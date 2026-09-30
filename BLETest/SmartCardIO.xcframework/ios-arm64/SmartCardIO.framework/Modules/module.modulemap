@@ -1,0 +1,10 @@
+framework module SmartCardIO {
+  umbrella header "SmartCardIO.h"
+  export *
+
+  module * { export * }
+}
+
+module SmartCardIO.Swift {
+  header "SmartCardIO-Swift.h"
+}
