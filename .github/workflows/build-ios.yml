@@ -2,7 +2,7 @@ name: Build BLETest iOS App
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "loop" ]
   workflow_dispatch:
 
 env:

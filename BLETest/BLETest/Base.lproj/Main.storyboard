@@ -223,6 +223,41 @@
                                             </constraints>
                                         </tableViewCellContentView>
                                     </tableViewCell>
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="none" indentationWidth="10" id="mN8-xG-1Vb">
+                                        <rect key="frame" x="0.0" y="249.00000381469727" width="414" height="56.333332061767578"/>
+                                        <autoresizingMask key="autoresizingMask"/>
+                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="mN8-xG-1Vb" id="fF2-oK-4Rj">
+                                            <rect key="frame" x="0.0" y="0.0" width="414" height="56.333332061767578"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                            <subviews>
+                                                <stackView opaque="NO" contentMode="scaleToFill" spacingType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="jB5-uQ-9Xb">
+                                                    <rect key="frame" x="20" y="11" width="374" height="34.333333333333336"/>
+                                                    <subviews>
+                                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Loop" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hN1-wP-3Yt">
+                                                            <rect key="frame" x="0.0" y="0.0" width="101" height="34.333333333333336"/>
+                                                            <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                                            <nil key="textColor"/>
+                                                            <nil key="highlightedColor"/>
+                                                        </label>
+                                                        <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" text="1" borderStyle="roundedRect" textAlignment="right" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="qZ6-uM-7Ls">
+                                                            <rect key="frame" x="109" y="0.0" width="265" height="34.333333333333336"/>
+                                                            <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                                            <textInputTraits key="textInputTraits" keyboardType="numberPad"/>
+                                                            <connections>
+                                                                <outlet property="delegate" destination="Qd9-5g-KkT" id="tL8-jW-5Kp"/>
+                                                            </connections>
+                                                        </textField>
+                                                    </subviews>
+                                                </stackView>
+                                            </subviews>
+                                            <constraints>
+                                                <constraint firstAttribute="trailingMargin" secondItem="jB5-uQ-9Xb" secondAttribute="trailing" id="gU9-lD-1Vf"/>
+                                                <constraint firstItem="jB5-uQ-9Xb" firstAttribute="leading" secondItem="fF2-oK-4Rj" secondAttribute="leadingMargin" id="hM3-wK-7Nt"/>
+                                                <constraint firstItem="jB5-uQ-9Xb" firstAttribute="top" secondItem="fF2-oK-4Rj" secondAttribute="topMargin" id="kE8-qB-4Ws"/>
+                                                <constraint firstAttribute="bottomMargin" secondItem="jB5-uQ-9Xb" secondAttribute="bottom" id="xP9-wN-2Ym"/>
+                                            </constraints>
+                                        </tableViewCellContentView>
+                                    </tableViewCell>
                                     <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" accessoryType="disclosureIndicator" indentationWidth="10" textLabel="PFI-yA-Bng" detailTextLabel="IrT-O8-uhh" style="IBUITableViewCellStyleValue1" id="NKD-7H-xVA">
                                         <rect key="frame" x="0.0" y="249.00000381469727" width="414" height="43.666667938232422"/>
                                         <autoresizingMask key="autoresizingMask"/>
@@ -383,6 +418,23 @@
                                             </subviews>
                                         </tableViewCellContentView>
                                     </tableViewCell>
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="SaveDatalog" textLabel="sVd-tL-1Ab" style="IBUITableViewCellStyleDefault" id="uRt-8D-4Fn">
+                                        <rect key="frame" x="0.0" y="634.33334732055664" width="414" height="43.666667938232422"/>
+                                        <autoresizingMask key="autoresizingMask"/>
+                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="uRt-8D-4Fn" id="wXy-9B-2Kl">
+                                            <rect key="frame" x="0.0" y="0.0" width="414" height="43.666667938232422"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                            <subviews>
+                                                <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" insetsLayoutMarginsFromSafeArea="NO" text="Save Datalog" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="sVd-tL-1Ab">
+                                                    <rect key="frame" x="20" y="0.0" width="374" height="43.666667938232422"/>
+                                                    <autoresizingMask key="autoresizingMask"/>
+                                                    <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                                    <color key="textColor" red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                                    <nil key="highlightedColor"/>
+                                                </label>
+                                            </subviews>
+                                        </tableViewCellContentView>
+                                    </tableViewCell>
                                     <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="Disconnect" textLabel="jap-jY-TFf" style="IBUITableViewCellStyleDefault" id="9dM-LJ-DvS">
                                         <rect key="frame" x="0.0" y="634.33334732055664" width="414" height="43.666667938232422"/>
                                         <autoresizingMask key="autoresizingMask"/>
@@ -452,6 +504,7 @@
                     <connections>
                         <outlet property="controlCodeTextField" destination="tc3-FQ-yua" id="xGM-rD-xul"/>
                         <outlet property="logTextView" destination="tcN-bB-0zb" id="Y8T-sa-yP5"/>
+                        <outlet property="loopTextField" destination="qZ6-uM-7Ls" id="rM2-kV-9Ps"/>
                         <outlet property="masterKeyLabel" destination="Meb-JK-5K1" id="A4L-UO-sF3"/>
                         <outlet property="protocolLabel" destination="gOC-7C-A9a" id="cOJ-96-OZJ"/>
                         <outlet property="scriptFileLabel" destination="kLo-kE-NJv" id="fZH-o7-fcN"/>

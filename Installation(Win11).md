@@ -152,7 +152,12 @@ For Windows 11 to communicate with your iPhone over USB, Apple mobile device dri
 
 ### Step 5: Prepare Your iPhone (Enable Developer Mode)
 
-On iOS 16, 17, and 18+, Apple requires Developer Mode to run sideloaded apps:
+On iOS 16, 17, and 18+, Apple requires Developer Mode to run sideloaded apps.
+
+> [!TIP]
+> **Can't find "Developer Mode" under Privacy & Security?**  
+> Apple intentionally hides the "Developer Mode" toggle on clean devices until a development app is sideloaded for the first time!  
+> **Simply skip ahead to [Step 6](#step-6-install-the-app-onto-iphone-using-sideloadly) now.** Sideloadly will install the IPA, which automatically instructs iOS to unhide the Developer Mode option. When you tap the newly installed app on your home screen, iOS will prompt you to turn on Developer Mode, which will now appear under **Settings** -> **Privacy & Security**.
 
 1. On your iPhone, open **Settings**.
 2. Tap **Privacy & Security**.

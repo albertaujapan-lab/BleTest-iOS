@@ -26,6 +26,7 @@ class MainViewController: UITableViewController {
     @IBOutlet weak var terminalTimeoutsLabel: UILabel!
     @IBOutlet weak var protocolLabel: UILabel!
     @IBOutlet weak var controlCodeTextField: UITextField!
+    @IBOutlet weak var loopTextField: UITextField!
     @IBOutlet weak var sourceLabel: UILabel!
     @IBOutlet weak var scriptFileLabel: UILabel!
     @IBOutlet weak var showCardStateLabel: UILabel!
@@ -56,6 +57,7 @@ class MainViewController: UITableViewController {
     var logger: Logger!
     let cardStateMonitor = CardStateMonitor.shared
     var firstRun = true
+    private weak var saveDatalogPicker: UIDocumentPickerViewController?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -71,6 +73,7 @@ class MainViewController: UITableViewController {
         terminalTimeoutsLabel.text = ""
         protocolLabel.text = "T=0 or T=1"
         controlCodeTextField.text = String(BluetoothTerminalManager.ioctlEscape)
+        loopTextField.text = "1"
         sourceLabel.text = SourceViewController.sources[source]
         scriptFileLabel.text = ""
 
@@ -94,6 +97,29 @@ class MainViewController: UITableViewController {
 
         // Load the settings.
         loadSettings()
+    }
+
+    /// Returns the validated loop count (always >= 1). If <= 0 or invalid, resets to 1.
+    var loopCount: Int {
+        if let text = loopTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+            let value = Int(text), value > 0 {
+            return value
+        }
+        loopTextField.text = "1"
+        return 1
+    }
+
+    private func validateLoopTextField() {
+        if let text = loopTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+            let value = Int(text) {
+            if value <= 0 {
+                loopTextField.text = "1"
+            } else {
+                loopTextField.text = String(value)
+            }
+        } else {
+            loopTextField.text = "1"
+        }
     }
 
     @objc func defaultsChanged(notification: NSNotification) {
@@ -1072,89 +1098,100 @@ class MainViewController: UITableViewController {
                     }
                 }
 
+                // Validate and get loop count.
+                let loops = self.loopCount
+
                 // Clear the log.
                 logger.clear()
 
                 cell.isUserInteractionEnabled = false
                 DispatchQueue.global().async {
 
-                    do {
+                    for currentLoop in 1...loops {
 
-                        // Wait for card insertion.
-                        for i in (1...5).reversed() {
-
-                            self.logger.logMsg(
-                                "Waiting for card insertion (\(terminal.name))... \(i)")
-                            let r = try terminal.waitForCardPresent(
-                                timeout: 1000)
-                            if r {
-                                break
-                            }
+                        if loops > 1 {
+                            self.logger.logMsg("--- Loop %d/%d ---", currentLoop, loops)
                         }
 
-                        // Connect to the card.
-                        self.logger.logMsg("Connecting to the card ("
-                            + terminal.name + ", " + protocolString + ")...")
-                        let card = try terminal.connect(
-                            protocolString: protocolString)
+                        do {
 
-                        // Get the ATR string.
-                        self.logger.logMsg("ATR:")
-                        self.logger.logBuffer(card.atr.bytes)
+                            // Wait for card insertion.
+                            for i in (1...5).reversed() {
 
-                        // Get the active protocol.
-                        self.logger.logMsg("Active Protocol: "
-                            + card.activeProtocol)
-
-                        if self.source == SourceViewController.sourceInput {
-
-                            // Send the commands.
-                            self.sendCommands(card: card, commands: self.commands) {
-
-                                let channel = try $0.basicChannel()
-                                let commandAPDU = try CommandAPDU(apdu: $1)
-                                let responseAPDU = try channel.transmit(
-                                    apdu: commandAPDU)
-
-                                return responseAPDU.bytes
+                                self.logger.logMsg(
+                                    "Waiting for card insertion (\(terminal.name))... \(i)")
+                                let r = try terminal.waitForCardPresent(
+                                    timeout: 1000)
+                                if r {
+                                    break
+                                }
                             }
 
-                        } else if self.source == SourceViewController.sourceiTunesFileSharing {
+                            // Connect to the card.
+                            self.logger.logMsg("Connecting to the card ("
+                                + terminal.name + ", " + protocolString + ")...")
+                            let card = try terminal.connect(
+                                protocolString: protocolString)
 
-                            // Run the script.
-                            self.runScript(card: card, filename: filename) {
+                            // Get the ATR string.
+                            self.logger.logMsg("ATR:")
+                            self.logger.logBuffer(card.atr.bytes)
 
-                                let channel = try $0.basicChannel()
-                                let commandAPDU = try CommandAPDU(apdu: $1)
-                                let responseAPDU = try channel.transmit(
-                                    apdu: commandAPDU)
+                            // Get the active protocol.
+                            self.logger.logMsg("Active Protocol: "
+                                + card.activeProtocol)
 
-                                return responseAPDU.bytes
+                            if self.source == SourceViewController.sourceInput {
+
+                                // Send the commands.
+                                self.sendCommands(card: card, commands: self.commands) {
+
+                                    let channel = try $0.basicChannel()
+                                    let commandAPDU = try CommandAPDU(apdu: $1)
+                                    let responseAPDU = try channel.transmit(
+                                        apdu: commandAPDU)
+
+                                    return responseAPDU.bytes
+                                }
+
+                            } else if self.source == SourceViewController.sourceiTunesFileSharing {
+
+                                // Run the script.
+                                self.runScript(card: card, filename: filename) {
+
+                                    let channel = try $0.basicChannel()
+                                    let commandAPDU = try CommandAPDU(apdu: $1)
+                                    let responseAPDU = try channel.transmit(
+                                        apdu: commandAPDU)
+
+                                    return responseAPDU.bytes
+                                }
+
+                            } else {
+
+                                // Run the script.
+                                self.runScript(card: card, url: url) {
+
+                                    let channel = try $0.basicChannel()
+                                    let commandAPDU = try CommandAPDU(apdu: $1)
+                                    let responseAPDU = try channel.transmit(
+                                        apdu: commandAPDU)
+
+                                    return responseAPDU.bytes
+                                }
                             }
 
-                        } else {
+                            // Disconnect from the card.
+                            self.logger.logMsg("Disconnecting the card ("
+                                + terminal.name + ")...")
+                            try card.disconnect(reset: false)
 
-                            // Run the script.
-                            self.runScript(card: card, url: url) {
+                        } catch {
 
-                                let channel = try $0.basicChannel()
-                                let commandAPDU = try CommandAPDU(apdu: $1)
-                                let responseAPDU = try channel.transmit(
-                                    apdu: commandAPDU)
-
-                                return responseAPDU.bytes
-                            }
+                            self.logger.logMsg("Error: "
+                                + error.localizedDescription)
+                            break
                         }
-
-                        // Disconnect from the card.
-                        self.logger.logMsg("Disconnecting the card ("
-                            + terminal.name + ")...")
-                        try card.disconnect(reset: false)
-
-                    } catch {
-
-                        self.logger.logMsg("Error: "
-                            + error.localizedDescription)
                     }
 
                     DispatchQueue.main.async {
@@ -1212,62 +1249,96 @@ class MainViewController: UITableViewController {
                     break
                 }
 
+                // Validate and get loop count.
+                let loops = self.loopCount
+
                 // Clear the log.
                 logger.clear()
 
                 cell.isUserInteractionEnabled = false
                 DispatchQueue.global().async {
 
-                    do {
+                    for currentLoop in 1...loops {
 
-                        // Connect to the card.
-                        self.logger.logMsg("Connecting to the card ("
-                            + terminal.name + ", direct)...")
-                        let card = try terminal.connect(
-                            protocolString: "direct")
-
-                        if self.source == SourceViewController.sourceInput {
-
-                            // Send the commands.
-                            self.sendCommands(card: card, commands: self.commands) {
-                                return try $0.transmitControlCommand(
-                                    controlCode: controlCode,
-                                    command: $1)
-                            }
-
-                        } else if self.source == SourceViewController.sourceiTunesFileSharing {
-
-                            // Run the script.
-                            self.runScript(card: card, filename: filename) {
-                                return try $0.transmitControlCommand(
-                                    controlCode: controlCode,
-                                    command: $1)
-                            }
-
-                        } else {
-
-                            // Run the script.
-                            self.runScript(card: card, url: url) {
-                                return try $0.transmitControlCommand(
-                                    controlCode: controlCode,
-                                    command: $1)
-                            }
+                        if loops > 1 {
+                            self.logger.logMsg("--- Loop %d/%d ---", currentLoop, loops)
                         }
 
-                        // Disconnect from the card.
-                        self.logger.logMsg("Disconnecting the card ("
-                            + terminal.name + ")...")
-                        try card.disconnect(reset: false)
+                        do {
 
-                    } catch {
+                            // Connect to the card.
+                            self.logger.logMsg("Connecting to the card ("
+                                + terminal.name + ", direct)...")
+                            let card = try terminal.connect(
+                                protocolString: "direct")
 
-                        self.logger.logMsg("Error: "
-                            + error.localizedDescription)
+                            if self.source == SourceViewController.sourceInput {
+
+                                // Send the commands.
+                                self.sendCommands(card: card, commands: self.commands) {
+                                    return try $0.transmitControlCommand(
+                                        controlCode: controlCode,
+                                        command: $1)
+                                }
+
+                            } else if self.source == SourceViewController.sourceiTunesFileSharing {
+
+                                // Run the script.
+                                self.runScript(card: card, filename: filename) {
+                                    return try $0.transmitControlCommand(
+                                        controlCode: controlCode,
+                                        command: $1)
+                                }
+
+                            } else {
+
+                                // Run the script.
+                                self.runScript(card: card, url: url) {
+                                    return try $0.transmitControlCommand(
+                                        controlCode: controlCode,
+                                        command: $1)
+                                }
+                            }
+
+                            // Disconnect from the card.
+                            self.logger.logMsg("Disconnecting the card ("
+                                + terminal.name + ")...")
+                            try card.disconnect(reset: false)
+
+                        } catch {
+
+                            self.logger.logMsg("Error: "
+                                + error.localizedDescription)
+                            break
+                        }
                     }
 
                     DispatchQueue.main.async {
                         cell.isUserInteractionEnabled = true
                     }
+                }
+
+            case "SaveDatalog", "Save Datalog":
+                let text = logTextView.text ?? ""
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyyMMddHHmmss"
+                let fileName = "Datalog-\(dateFormatter.string(from: Date())).txt"
+                let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+
+                do {
+                    try text.write(to: tempURL, atomically: true, encoding: .utf8)
+                    let documentPicker = UIDocumentPickerViewController(
+                        forExporting: [tempURL],
+                        asCopy: true)
+                    documentPicker.delegate = self
+                    if let popover = documentPicker.popoverPresentationController {
+                        popover.sourceView = cell
+                        popover.sourceRect = cell.bounds
+                    }
+                    self.saveDatalogPicker = documentPicker
+                    present(documentPicker, animated: true)
+                } catch {
+                    logger.logMsg("Error: " + error.localizedDescription)
                 }
 
             case "Disconnect":
@@ -1317,11 +1388,18 @@ extension MainViewController: UITextFieldDelegate {
 
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
 
-        if textField == controlCodeTextField {
+        if textField == controlCodeTextField || textField == loopTextField {
             textField.resignFirstResponder()
         }
 
         return true
+    }
+
+    func textFieldDidEndEditing(_ textField: UITextField) {
+
+        if textField == loopTextField {
+            validateLoopTextField()
+        }
     }
 }
 
@@ -1588,6 +1666,14 @@ extension MainViewController: UIDocumentPickerDelegate {
     func documentPicker(_ controller: UIDocumentPickerViewController,
                         didPickDocumentsAt urls: [URL]) {
 
+        if controller === saveDatalogPicker {
+            saveDatalogPicker = nil
+            if let savedURL = urls.first {
+                logger.logMsg("Datalog saved to \(savedURL.lastPathComponent)")
+            }
+            return
+        }
+
         if !urls.isEmpty {
 
             // Store the selected URL.
@@ -1596,6 +1682,12 @@ extension MainViewController: UIDocumentPickerDelegate {
             // Update the filename.
             scriptFileLabel.text = urls[0].lastPathComponent
             tableView.reloadData()
+        }
+    }
+
+    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+        if controller === saveDatalogPicker {
+            saveDatalogPicker = nil
         }
     }
 }
