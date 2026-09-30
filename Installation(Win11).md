@@ -77,8 +77,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Select Xcode Version
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+      - name: Check Xcode Version
+        run: |
+          xcodebuild -version
+          echo "Available Xcode installations:"
+          ls -d /Applications/Xcode*
 
       - name: Build App Archive
         run: |
@@ -87,15 +90,15 @@ jobs:
             -target BLETest \
             -sdk iphoneos \
             -configuration Release \
-            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_ALLOWED=YES \
             CONFIGURATION_BUILD_DIR=build/Release-iphoneos
 
       - name: Package into IPA
         run: |
           mkdir -p build/Payload
-          cp -r build/Release-iphoneos/BLETest.app build/Payload/
+          cp -R build/Release-iphoneos/BLETest.app build/Payload/
           cd build
           zip -r BLETest.ipa Payload/
           cd ..
