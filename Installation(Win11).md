@@ -87,9 +87,12 @@ jobs:
         run: |
           xcodebuild clean build \
             -project BLETest/BLETest.xcodeproj \
-            -target BLETest \
-            -sdk iphoneos \
+            -scheme BLETest \
             -configuration Release \
+            -destination "generic/platform=iOS" \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=YES \

@@ -27,8 +27,7 @@ jobs:
         run: |
           xcodebuild clean build \
             -project BLETest/BLETest.xcodeproj \
-            -target BLETest \
-            -sdk iphoneos \
+            -scheme BLETest \
             -configuration Release \
             -destination "generic/platform=iOS" \
             CODE_SIGN_STYLE=Manual \
