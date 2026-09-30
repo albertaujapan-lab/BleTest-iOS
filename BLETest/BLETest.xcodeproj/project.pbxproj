@@ -12,9 +12,9 @@
 		56236056206C8C380091485C /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 56236055206C8C380091485C /* Settings.bundle */; };
 		5648D8361FE51F0B00BA6228 /* Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5648D8351FE51F0B00BA6228 /* Hex.swift */; };
 		567412FC301348310016D8C3 /* SmartCardIO.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 567412FB301348310016D8C3 /* SmartCardIO.xcframework */; };
-		567412FD301348310016D8C3 /* SmartCardIO.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 567412FB301348310016D8C3 /* SmartCardIO.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		567412FD301348310016D8C3 /* SmartCardIO.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 567412FB301348310016D8C3 /* SmartCardIO.xcframework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		567413003013483F0016D8C3 /* ACSSmartCardIO.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 567412FF3013483F0016D8C3 /* ACSSmartCardIO.xcframework */; };
-		567413013013483F0016D8C3 /* ACSSmartCardIO.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 567412FF3013483F0016D8C3 /* ACSSmartCardIO.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		567413013013483F0016D8C3 /* ACSSmartCardIO.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 567412FF3013483F0016D8C3 /* ACSSmartCardIO.xcframework */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		568DE3B82338A8E7008873DC /* TerminalTimeoutsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 568DE3B72338A8E7008873DC /* TerminalTimeoutsViewController.swift */; };
 		56A02A811FDE2D950075E77E /* ProtocolViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A02A801FDE2D950075E77E /* ProtocolViewController.swift */; };
 		56A44E1A23FCE7B800D8591D /* CardStateMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A44E1923FCE7B800D8591D /* CardStateMonitor.swift */; };

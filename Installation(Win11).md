@@ -85,23 +85,23 @@ jobs:
 
       - name: Build App Archive
         run: |
-          xcodebuild clean build \
+          xcodebuild clean archive \
             -project BLETest/BLETest.xcodeproj \
             -scheme BLETest \
             -configuration Release \
             -destination "generic/platform=iOS" \
+            -archivePath build/BLETest.xcarchive \
             CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM="" \
             PROVISIONING_PROFILE_SPECIFIER="" \
-            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=YES \
-            CONFIGURATION_BUILD_DIR=build/Release-iphoneos
+            CODE_SIGNING_ALLOWED=NO
 
       - name: Package into IPA
         run: |
           mkdir -p build/Payload
-          cp -R build/Release-iphoneos/BLETest.app build/Payload/
+          cp -R build/BLETest.xcarchive/Products/Applications/BLETest.app build/Payload/
           cd build
           zip -r BLETest.ipa Payload/
           cd ..
