@@ -415,9 +415,10 @@ class MainViewController: UITableViewController {
     ///   - card: the card
     ///   - filename: the filename
     ///   - send: the closure for sending command and receiving response
+    @discardableResult
     func runScript(card: Card,
                    filename: String,
-                   send: (Card, [UInt8]) throws -> [UInt8]) {
+                   send: (Card, [UInt8]) throws -> [UInt8]) -> Bool {
 
         // Open the log file.
         let currentDate = Date()
@@ -428,12 +429,14 @@ class MainViewController: UITableViewController {
         logger.openLogFile(name: logFilename)
         logger.logMsg("Running the script...")
 
+        var success = false
+
         // Open the script file.
         logger.logMsg("Opening " + filename + "...")
         if let hScriptFile = openFile(name: filename) {
 
             // Run the script.
-            runScript(card: card, hScriptFile: hScriptFile, send: send)
+            success = runScript(card: card, hScriptFile: hScriptFile, send: send)
 
             // Close the script file.
             hScriptFile.closeFile()
@@ -445,6 +448,8 @@ class MainViewController: UITableViewController {
 
         // Close the log file.
         logger.closeLogFile()
+
+        return success
     }
 
     /// Runs the script.
@@ -454,9 +459,10 @@ class MainViewController: UITableViewController {
     ///   - card: the card
     ///   - url: the URL
     ///   - send: the closure for sending command and receiving response
+    @discardableResult
     func runScript(card: Card,
                    url: URL,
-                   send: (Card, [UInt8]) throws -> [UInt8]) {
+                   send: (Card, [UInt8]) throws -> [UInt8]) -> Bool {
 
         // Open the log file.
         let currentDate = Date()
@@ -471,13 +477,16 @@ class MainViewController: UITableViewController {
         guard url.startAccessingSecurityScopedResource() else {
 
             logger.logMsg("Error: Cannot access the URL")
-            return
+            logger.closeLogFile()
+            return false
         }
 
         // Release the URL.
         defer {
             url.stopAccessingSecurityScopedResource()
         }
+
+        var success = false
 
         // Use a file coordinator to read the URL's contents.
         var error: NSError? = nil
@@ -488,7 +497,7 @@ class MainViewController: UITableViewController {
             if let hScriptFile = try? FileHandle(forReadingFrom: url) {
 
                 // Run the script.
-                runScript(card: card, hScriptFile: hScriptFile, send: send)
+                success = runScript(card: card, hScriptFile: hScriptFile, send: send)
 
                 // Close the script file.
                 hScriptFile.closeFile()
@@ -501,10 +510,13 @@ class MainViewController: UITableViewController {
 
         if error != nil {
             logger.logMsg("Error: " + error!.localizedDescription)
+            success = false
         }
 
         // Close the log file.
         logger.closeLogFile()
+
+        return success
     }
 
     /// Runs the script.
@@ -514,9 +526,12 @@ class MainViewController: UITableViewController {
     ///   - card: the card
     ///   - hScriptFile: the script file handle
     ///   - send: the closure for sending command and receiving response
+    @discardableResult
     func runScript(card: Card,
                    hScriptFile: FileHandle,
-                   send: (Card, [UInt8]) throws -> [UInt8]) {
+                   send: (Card, [UInt8]) throws -> [UInt8]) -> Bool {
+
+        var success = true
 
         do {
 
@@ -593,18 +608,23 @@ class MainViewController: UITableViewController {
                 } else {
 
                     logger.logMsg("Error: Unexpected response")
+                    success = false
                     break
                 }
             }
 
             if numCommands == 0 {
                 logger.logMsg("Error: Cannot load the command")
+                success = false
             }
 
         } catch {
 
             logger.logMsg("Error: " + error.localizedDescription)
+            success = false
         }
+
+        return success
     }
 
     /// Sends the commands.
@@ -614,9 +634,10 @@ class MainViewController: UITableViewController {
     ///   - card: the card
     ///   - commands: the commands
     ///   - send: the closure for sending command and receiving response
+    @discardableResult
     func sendCommands(card: Card,
                       commands: String,
-                      send: (Card, [UInt8]) throws -> [UInt8]) {
+                      send: (Card, [UInt8]) throws -> [UInt8]) -> Bool {
 
         // Open the log file.
         let currentDate = Date()
@@ -625,6 +646,9 @@ class MainViewController: UITableViewController {
         let logFilename = "Log-" + dateFormatter.string(from: currentDate)
             + ".txt"
         logger.openLogFile(name: logFilename)
+
+        var success = true
+        var numCommands = 0
 
         logger.logMsg("Sending the commands...")
         do {
@@ -660,6 +684,8 @@ class MainViewController: UITableViewController {
                 // Skip the empty command.
                 if command.count > 0 {
 
+                    numCommands += 1
+
                     logger.logMsg("Command:")
                     logger.logBuffer(command)
 
@@ -681,13 +707,21 @@ class MainViewController: UITableViewController {
 
             } while foundIndex != substrings.endIndex
 
+            if numCommands == 0 {
+                logger.logMsg("Error: Command not found")
+                success = false
+            }
+
         } catch {
 
             logger.logMsg("Error: " + error.localizedDescription)
+            success = false
         }
 
         // Close the log file.
         logger.closeLogFile()
+
+        return success
     }
 
     /// Opens the file.
@@ -1107,11 +1141,16 @@ class MainViewController: UITableViewController {
                 cell.isUserInteractionEnabled = false
                 DispatchQueue.global().async {
 
+                    var passCount = 0
+                    var failCount = 0
+
                     for currentLoop in 1...loops {
 
                         if loops > 1 {
-                            self.logger.logMsg("--- Loop %d/%d ---", currentLoop, loops)
+                            self.logger.logMsg("---------- Loop %d/%d ----------", currentLoop, loops)
                         }
+
+                        var loopPassed = false
 
                         do {
 
@@ -1141,10 +1180,12 @@ class MainViewController: UITableViewController {
                             self.logger.logMsg("Active Protocol: "
                                 + card.activeProtocol)
 
+                            var commandsSuccess = false
+
                             if self.source == SourceViewController.sourceInput {
 
                                 // Send the commands.
-                                self.sendCommands(card: card, commands: self.commands) {
+                                commandsSuccess = self.sendCommands(card: card, commands: self.commands) {
 
                                     let channel = try $0.basicChannel()
                                     let commandAPDU = try CommandAPDU(apdu: $1)
@@ -1157,7 +1198,7 @@ class MainViewController: UITableViewController {
                             } else if self.source == SourceViewController.sourceiTunesFileSharing {
 
                                 // Run the script.
-                                self.runScript(card: card, filename: filename) {
+                                commandsSuccess = self.runScript(card: card, filename: filename) {
 
                                     let channel = try $0.basicChannel()
                                     let commandAPDU = try CommandAPDU(apdu: $1)
@@ -1170,7 +1211,7 @@ class MainViewController: UITableViewController {
                             } else {
 
                                 // Run the script.
-                                self.runScript(card: card, url: url) {
+                                commandsSuccess = self.runScript(card: card, url: url) {
 
                                     let channel = try $0.basicChannel()
                                     let commandAPDU = try CommandAPDU(apdu: $1)
@@ -1186,13 +1227,25 @@ class MainViewController: UITableViewController {
                                 + terminal.name + ")...")
                             try card.disconnect(reset: false)
 
+                            loopPassed = commandsSuccess
+
                         } catch {
 
                             self.logger.logMsg("Error: "
                                 + error.localizedDescription)
-                            break
+                            loopPassed = false
+                        }
+
+                        if loopPassed {
+                            passCount += 1
+                            self.logger.logMsg("Loop#%d pass", currentLoop)
+                        } else {
+                            failCount += 1
+                            self.logger.logMsg("Loop#%d fail", currentLoop)
                         }
                     }
+
+                    self.logger.logMsg("Pass: %d  and Fail: %d", passCount, failCount)
 
                     DispatchQueue.main.async {
                         cell.isUserInteractionEnabled = true
@@ -1258,11 +1311,16 @@ class MainViewController: UITableViewController {
                 cell.isUserInteractionEnabled = false
                 DispatchQueue.global().async {
 
+                    var passCount = 0
+                    var failCount = 0
+
                     for currentLoop in 1...loops {
 
                         if loops > 1 {
-                            self.logger.logMsg("--- Loop %d/%d ---", currentLoop, loops)
+                            self.logger.logMsg("---------- Loop %d/%d ----------", currentLoop, loops)
                         }
+
+                        var loopPassed = false
 
                         do {
 
@@ -1272,10 +1330,12 @@ class MainViewController: UITableViewController {
                             let card = try terminal.connect(
                                 protocolString: "direct")
 
+                            var commandsSuccess = false
+
                             if self.source == SourceViewController.sourceInput {
 
                                 // Send the commands.
-                                self.sendCommands(card: card, commands: self.commands) {
+                                commandsSuccess = self.sendCommands(card: card, commands: self.commands) {
                                     return try $0.transmitControlCommand(
                                         controlCode: controlCode,
                                         command: $1)
@@ -1284,7 +1344,7 @@ class MainViewController: UITableViewController {
                             } else if self.source == SourceViewController.sourceiTunesFileSharing {
 
                                 // Run the script.
-                                self.runScript(card: card, filename: filename) {
+                                commandsSuccess = self.runScript(card: card, filename: filename) {
                                     return try $0.transmitControlCommand(
                                         controlCode: controlCode,
                                         command: $1)
@@ -1293,7 +1353,7 @@ class MainViewController: UITableViewController {
                             } else {
 
                                 // Run the script.
-                                self.runScript(card: card, url: url) {
+                                commandsSuccess = self.runScript(card: card, url: url) {
                                     return try $0.transmitControlCommand(
                                         controlCode: controlCode,
                                         command: $1)
@@ -1305,13 +1365,25 @@ class MainViewController: UITableViewController {
                                 + terminal.name + ")...")
                             try card.disconnect(reset: false)
 
+                            loopPassed = commandsSuccess
+
                         } catch {
 
                             self.logger.logMsg("Error: "
                                 + error.localizedDescription)
-                            break
+                            loopPassed = false
+                        }
+
+                        if loopPassed {
+                            passCount += 1
+                            self.logger.logMsg("Loop#%d pass", currentLoop)
+                        } else {
+                            failCount += 1
+                            self.logger.logMsg("Loop#%d fail", currentLoop)
                         }
                     }
+
+                    self.logger.logMsg("Pass: %d  and Fail: %d", passCount, failCount)
 
                     DispatchQueue.main.async {
                         cell.isUserInteractionEnabled = true
@@ -1319,7 +1391,8 @@ class MainViewController: UITableViewController {
                 }
 
             case "SaveDatalog", "Save Datalog":
-                let text = logTextView.text ?? ""
+                let fullText = logger.fullLog
+                let text = fullText.isEmpty ? (logTextView.text ?? "") : fullText
                 let dateFormatter = DateFormatter()
                 dateFormatter.dateFormat = "yyyyMMddHHmmss"
                 let fileName = "Datalog-\(dateFormatter.string(from: Date())).txt"

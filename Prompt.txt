@@ -1,0 +1,12 @@
+Goal: Update the UI and function of the program to allow loop running and datalog saving.
+
+Instruction:
+
+1. Inside <tableViewSection id="mhT-lj-opq">, add a tableViewCell under the tableViewCell that contains label with text="Control Code".
+2. This new tableViewCell should contains a label with text="Loop" and a textField used to store the numerical value. 
+3. The default value of Loop is 1. If the user input 0 or negative value, please change it to 1. 
+4. The original program will only execute one time when “Transmit” or “Control” label is pressed. Please update the program to repeat execution stated in Loop value.
+5. Inside <tableViewSection id="6Md-4C-TeU">, add a new tableViewCell under the tableViewCell containing a label with text="Control"
+6. This new tableViewCell contains a label with text="Save Datalog".
+7. When "Save Datalog" label is clicked, a File Dialog should popup and allow the user to save the content of textview in  <tableViewSection id="cTu-aD-P5B">
+8. The modified program should be treated as a new branch called "loop" instead of "main"

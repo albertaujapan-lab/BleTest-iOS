@@ -21,6 +21,16 @@ class Logger {
     private let textView: UITextView
     private var numLines = 0
     private var hLogFile: FileHandle?
+    private let lock = NSLock()
+    private var fullLogBuffer = ""
+
+    /// Returns the complete log text accumulated since the last `clear()`,
+    /// unconstrained by the UI text view line limit.
+    var fullLog: String {
+        lock.lock()
+        defer { lock.unlock() }
+        return fullLogBuffer
+    }
 
     /// Creates an instance of `Logger`.
     ///
@@ -90,6 +100,10 @@ class Logger {
         #if DEBUG
             print(msg)
         #endif
+
+        lock.lock()
+        fullLogBuffer.append("\(msg)\n")
+        lock.unlock()
 
         let textView = self.textView
         DispatchQueue.main.async {
@@ -217,6 +231,10 @@ class Logger {
 
     /// Clears the log messages.
     func clear() {
+
+        lock.lock()
+        fullLogBuffer = ""
+        lock.unlock()
 
         DispatchQueue.main.async {
 
