@@ -1,0 +1,17 @@
+Goal: To add a card Reset function - resetCard().
+Instruction: 
+1. The content resetCard() looks like
+	do {
+		// 1. Disconnect and power reset the card
+		try card.disconnect(reset: true)
+		// 2. Re-connect to the card
+		let newCard = try terminal.connect(protocolString: "*")
+		// 3. Obtain the new ATR bytes
+		let atr: [UInt8] = newCard.atr.bytes
+		self.logger.logMsg("ATR:")
+		self.logger.logBuffer(atr)
+	} catch {
+		self.logger.logMsg("Error: " + error.localizedDescription)
+	}
+
+2. resetCard() is executed when the line of a text script contains [RST]

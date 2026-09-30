@@ -49,6 +49,7 @@ class MainViewController: UITableViewController {
     let factory = BluetoothSmartCard.shared.factory
     weak var terminalListViewController: TerminalListViewController?
     var terminal: CardTerminal?
+    var card: Card?
     var protocols = [ true, true ]
     var source = SourceViewController.sourceDocumentPicker
     var commands = ""
@@ -409,6 +410,50 @@ class MainViewController: UITableViewController {
         }
     }
 
+    /// Resets the smart card.
+    ///
+    /// - Returns: `true` if successful, `false` otherwise
+    @discardableResult
+    func resetCard() -> Bool {
+        guard let card = self.card else {
+            self.logger.logMsg("Error: Card not connected")
+            return false
+        }
+        return resetCard(card: card)
+    }
+
+    /// Resets the smart card with the specified card instance.
+    ///
+    /// - Parameter card: the card to reset
+    /// - Returns: `true` if successful, `false` otherwise
+    @discardableResult
+    func resetCard(card: Card) -> Bool {
+
+        guard let terminal = self.terminal else {
+            self.logger.logMsg("Error: Card terminal not selected")
+            return false
+        }
+
+        do {
+            // 1. Disconnect and power reset the card
+            try card.disconnect(reset: true)
+
+            // 2. Re-connect to the card
+            let newCard = try terminal.connect(protocolString: "*")
+            self.card = newCard
+
+            // 3. Obtain the new ATR bytes
+            let atr: [UInt8] = newCard.atr.bytes
+            self.logger.logMsg("ATR:")
+            self.logger.logBuffer(atr)
+
+            return true
+        } catch {
+            self.logger.logMsg("Error: " + error.localizedDescription)
+            return false
+        }
+    }
+
     /// Runs the script.
     ///
     /// - Parameters:
@@ -546,6 +591,24 @@ class MainViewController: UITableViewController {
                 var line = readLine(hFile: hScriptFile)
                 while line.count > 0 {
 
+                    let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if trimmed.hasPrefix(";") {
+                        line = readLine(hFile: hScriptFile)
+                        continue
+                    }
+
+                    if line.contains("[RST]") {
+                        logger.logMsg("[RST]")
+                        if !resetCard(card: self.card ?? card) {
+                            success = false
+                            break
+                        }
+                        numCommands += 1
+                        commandLoaded = false
+                        line = readLine(hFile: hScriptFile)
+                        continue
+                    }
+
                     // Skip the comment line.
                     if !line.contains(";") {
 
@@ -572,6 +635,10 @@ class MainViewController: UITableViewController {
                     line = readLine(hFile: hScriptFile)
                 }
 
+                if !success {
+                    break
+                }
+
                 if !commandLoaded || !responseLoaded {
                     break
                 }
@@ -584,7 +651,7 @@ class MainViewController: UITableViewController {
 
                 // Send the command.
                 let startTime = Date()
-                let response = try send(card, command)
+                let response = try send(self.card ?? card, command)
                 let endTime = Date()
                 let time = endTime.timeIntervalSince(startTime)
 
@@ -672,14 +739,29 @@ class MainViewController: UITableViewController {
                     hexString = String(substrings)
                 }
 
-                let command = Hex.toByteArray(hexString: hexString)
-
                 // Set the next substrings.
                 if foundIndex < substrings.endIndex {
 
                     foundIndex = substrings.index(after: foundIndex)
                     substrings = substrings[foundIndex...]
                 }
+
+                let trimmed = hexString.trimmingCharacters(in: .whitespacesAndNewlines)
+                if trimmed.hasPrefix(";") {
+                    continue
+                }
+
+                if hexString.contains("[RST]") {
+                    logger.logMsg("[RST]")
+                    if !resetCard(card: self.card ?? card) {
+                        success = false
+                        break
+                    }
+                    numCommands += 1
+                    continue
+                }
+
+                let command = Hex.toByteArray(hexString: hexString)
 
                 // Skip the empty command.
                 if command.count > 0 {
@@ -691,7 +773,7 @@ class MainViewController: UITableViewController {
 
                     // Send the command.
                     let startTime = Date()
-                    let response = try send(card, command)
+                    let response = try send(self.card ?? card, command)
                     let endTime = Date()
                     let time = endTime.timeIntervalSince(startTime)
 
@@ -1171,6 +1253,7 @@ class MainViewController: UITableViewController {
                                 + terminal.name + ", " + protocolString + ")...")
                             let card = try terminal.connect(
                                 protocolString: protocolString)
+                            self.card = card
 
                             // Get the ATR string.
                             self.logger.logMsg("ATR:")
@@ -1225,12 +1308,14 @@ class MainViewController: UITableViewController {
                             // Disconnect from the card.
                             self.logger.logMsg("Disconnecting the card ("
                                 + terminal.name + ")...")
-                            try card.disconnect(reset: false)
+                            try (self.card ?? card).disconnect(reset: false)
+                            self.card = nil
 
                             loopPassed = commandsSuccess
 
                         } catch {
 
+                            self.card = nil
                             self.logger.logMsg("Error: "
                                 + error.localizedDescription)
                             loopPassed = false
@@ -1329,6 +1414,7 @@ class MainViewController: UITableViewController {
                                 + terminal.name + ", direct)...")
                             let card = try terminal.connect(
                                 protocolString: "direct")
+                            self.card = card
 
                             var commandsSuccess = false
 
@@ -1363,12 +1449,14 @@ class MainViewController: UITableViewController {
                             // Disconnect from the card.
                             self.logger.logMsg("Disconnecting the card ("
                                 + terminal.name + ")...")
-                            try card.disconnect(reset: false)
+                            try (self.card ?? card).disconnect(reset: false)
+                            self.card = nil
 
                             loopPassed = commandsSuccess
 
                         } catch {
 
+                            self.card = nil
                             self.logger.logMsg("Error: "
                                 + error.localizedDescription)
                             loopPassed = false
